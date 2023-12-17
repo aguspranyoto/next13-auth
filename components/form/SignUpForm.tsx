@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "@/components/ui/use-toast";
+import { toast, useToast } from "@/components/ui/use-toast";
 import {
   Form,
   FormControl,
@@ -17,6 +17,7 @@ import {
 import * as z from "zod";
 import Link from "next/link";
 import GoogleSignInButton from "../GoogleSignInButton";
+import { useRouter } from "next/navigation";
 
 const FormSchema = z
   .object({
@@ -39,6 +40,8 @@ const FormSchema = z
   });
 
 const SingUpForm = () => {
+  const { toast } = useToast();
+  const router = useRouter();
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -49,11 +52,28 @@ const SingUpForm = () => {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof FormSchema>) => {
-    // toast({
-    //   title: "You submitted the following values:",
-    // });
-    console.log(values);
+  const onSubmit = async (values: z.infer<typeof FormSchema>) => {
+    const response = await fetch("/api/user", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        username: values.username,
+        email: values.email,
+        password: values.password,
+      }),
+    });
+
+    if (response.ok) {
+      router.push("/sign-in");
+    } else {
+      toast({
+        title: "Error",
+        variant: "destructive",
+        description: "Oops! Something went wrong",
+      });
+    }
   };
 
   return (
@@ -122,7 +142,7 @@ const SingUpForm = () => {
           />
         </div>
         <Button className="w-full mt-6" type="submit">
-          Sign up
+          Register
         </Button>
       </form>
       <div className="mx-auto my-4 flex w-full items-center justify-evenly before:mr-4 before:block before:h-px before:flex-grow before:bg-stone-400 after:ml-4 after:block after:h-px after:flex-grow after:bg-stone-400">

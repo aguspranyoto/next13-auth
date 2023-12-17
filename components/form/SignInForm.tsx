@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 import {
   Form,
   FormControl,
@@ -17,6 +17,8 @@ import {
 import * as z from "zod";
 import Link from "next/link";
 import GoogleSignInButton from "../GoogleSignInButton";
+import { signIn } from "next-auth/react";
+import { useRouter } from "next/navigation";
 
 const FormSchema = z.object({
   email: z
@@ -30,6 +32,8 @@ const FormSchema = z.object({
 });
 
 const SingInForm = () => {
+  const { toast } = useToast();
+  const router = useRouter();
   const form = useForm<z.infer<typeof FormSchema>>({
     resolver: zodResolver(FormSchema),
     defaultValues: {
@@ -38,11 +42,22 @@ const SingInForm = () => {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof FormSchema>) => {
-    // toast({
-    //   title: "You submitted the following values:",
-    // });
-    console.log(values);
+  const onSubmit = async (values: z.infer<typeof FormSchema>) => {
+    const signInData = await signIn("credentials", {
+      email: values.email,
+      password: values.password,
+      redirect: false,
+    });
+    if (signInData?.error) {
+      toast({
+        title: "Error",
+        variant: "destructive",
+        description: "Oops! Something went wrong",
+      });
+    } else {
+      router.refresh();
+      router.push("/admin");
+    }
   };
 
   return (
